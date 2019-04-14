@@ -53,7 +53,7 @@ const nightColor = (color, background, cl, logo) => {
 //Подгрузка видео 
 const data = [
     ['img/thumb_3.webp', 'img/thumb_4.webp', 'img/thumb_5.webp'],
-    ['#3 Верстка на flexbox CSS | Блок преимущества и галерея | Марафон верстки | Артем Исламов',
+    ['              #3 Верстка на flexbox CSS | Блок преимущества и галерея | Марафон верстки | Артем Исламов',
         '#2 Установка spikmi и работа с ветками на Github | Марафон вёрстки Урок 2',
         '#1 Верстка реального заказа landing Page | Марафон вёрстки | Артём Исламов'],
     ['3,6 тыс. просмотров', '4,2 тыс. просмотров', '28 тыс. просмотров'],
@@ -61,6 +61,7 @@ const data = [
 ];
 more.addEventListener('click', () => {
     const videosWrapper = document.querySelector('.videos__wrapper');
+    const cards = [];
     more.remove();
     for (let i = 0; i < data[0].length; i++) {
         let card = document.createElement('a');
@@ -76,10 +77,73 @@ more.addEventListener('click', () => {
         </div>
         `;
         videosWrapper.appendChild(card);
+        cards.push(card);   //для дабавления клика
         //Это нужно для того, чтобы картинки появились плавно со сдвигом
         setTimeout(() => {
             card.classList.remove('videos__item-active');   //после удаления этого класса opacity = 1 ;
         }, 10);
 
     }
+    sliceTitle('.videos__item-descr', 70);
+    bindModal(cards);
 })
+
+function sliceTitle(cl, num) {
+    document.querySelectorAll(cl).forEach(item => {
+        item.textContent = item.textContent.trim();     //удаление пробелов в тайтле
+        if (item.textContent.length <= num) return;
+        else {
+            item.textContent = item.textContent.slice(0, num) + '...';
+        }
+    });
+}
+sliceTitle('.videos__item-descr', 70);
+
+//Модальное окно
+modal.showModal = function (show) {
+    this.style.display = show;
+}
+function bindModal(cards) {         //устновка клика на видео
+    cards.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();        //отмена стандартного поведения клика на ссылку
+            const id = item.getAttribute('data-url');
+            loadVideo(id);  //Загрузка нужного видео в модальное окно при клике
+            modal.showModal('block');
+
+        });
+    });
+}
+bindModal(videos);
+//Для закрытия
+modal.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('modal__body')) {
+        modal.showModal('none');
+        player.stopVideo();     //Остановка плеера 
+    }
+});
+//Для ютуба
+function createVideo() {
+    // 2. This code loads the IFrame Player API code asynchronously.
+    let tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    let firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    //Создание экземпляра плеера
+    setTimeout(() => {
+        player = new YT.Player('frame', {   //первый аргумент - это существующий тег, который будет заменен на плеер.
+            height: '100%',
+            width: '100%',
+            videoId: 'M7lc1UVf-VE',
+        });
+        console.log(YT);
+    }, 1300);
+};
+createVideo();
+//Загрузка нужного видео в модальное окно
+function loadVideo(id) {
+    player.loadVideoById({'videoId': id.toString()});
+}
+
+
+
