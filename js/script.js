@@ -3,7 +3,9 @@
 const switcher = document.querySelector('#cbx'),   //Кнопка ночного режима
     more = document.querySelector('.more'),       //Кнопка загрузить еще
     modal = document.querySelector('.modal'),
-    videos = document.querySelectorAll('.videos__item');  //Видеоролики
+    videos = document.querySelectorAll('.videos__item'),  //Видеоролики
+    videosWrapper = document.querySelector('.videos__wrapper'), //Содержит видеоролики
+    searchInput = document.querySelector('.search > input');  //Поле поиска
 
 let player;     //Плеер который будет подтягиваться с ютуба
 let night = false;  //Для ночного режима
@@ -21,7 +23,6 @@ function bindSlideToggle(trigger, boxBody, content, openClass) {
             button.active = true;
             box.style.height = boxContent.clientHeight + 'px';   //Меняется высота меню с 0 на высоту контента внутри него
             box.classList.add(openClass)    //Активные класс для меню
-            console.log(box);
         } else {
             button.active = false;
             box.style.height = 0 + 'px';   //Меняется высота меню с 0 на высоту контента внутри него
@@ -52,12 +53,12 @@ const nightColor = (color, background, cl, logo) => {
 
 //После нажатия кнопки Заргузить. Отображение видеороликов на странице
 function showItems(result) {
-    const videosWrapper = document.querySelector('.videos__wrapper');
     const cards = [];  // массив карточек видео. для модального окна и не только
     result.items.forEach(item => {
         let card = document.createElement('a');
         card.classList.add('videos__item', 'videos__item-active'); // videos__item-active - opacity = 0 и смещение на 50;
-        card.setAttribute('data-url', item.contentDetails.videoId);  //установка атрибута  
+        card.setAttribute('data-url', item.id.videoId);  //установка атрибута  
+        //card.setAttribute('data-url', item.contentDetails.videoId);  //установка атрибута  
         card.innerHTML = `
         <img src="${item.snippet.thumbnails.high.url}" alt="thumb">
         <div class="videos__item-descr">
@@ -67,7 +68,7 @@ function showItems(result) {
         </div>
         `;
         //Для количества просмотров
-        let adress = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${item.contentDetails.videoId}&key=AIzaSyBoGpH_AqA84HM2HiAbtgVHFuTeYZtCvWE`;
+        let adress = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${item.id.videoId}&key=AIzaSyBoGpH_AqA84HM2HiAbtgVHFuTeYZtCvWE`;
         getviewCount(adress, setCount, card); //Получение и простановка промостров
         videosWrapper.appendChild(card);    //Добавление карточки видео на страницу
         cards.push(card);   //для дабавления клика
@@ -177,3 +178,34 @@ function setCount(youtubeItem, card) {
     const div = card.querySelector('.videos__item-views');
     div.textContent = `Просмотров: ${youtubeItem.items[0].statistics.viewCount}`;
 }
+//Поиск
+function search(target) {
+    gapi.client.init({
+        'apiKey': 'AIzaSyBoGpH_AqA84HM2HiAbtgVHFuTeYZtCvWE',
+        'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
+    }).then(function () {
+        return gapi.client.youtube.search.list({
+            'maxResults': '10',  //колво результатов
+            'part': 'snippet',  //какую часть данных хотим получить.
+            'q': `${target}`,    //Запрос
+            'type': '',
+        });
+    }).then(function (response) {
+        while(videosWrapper.firstChild) {
+            videosWrapper.removeChild(videosWrapper.firstChild) //Удаление видеороликов
+        };
+        showItems(response.result); //Отображение новых роликов
+    });
+}
+
+function getDataForSearch() {
+    return search(searchInput.value);
+}
+
+document.querySelector('.search').addEventListener('submit', (e) => {
+    e.preventDefault(); //Отмена стандартного поведения - перезагрузки страницы
+    if (searchInput.value.length > 0) {
+        gapi.load('client', getDataForSearch);  //Передача данных для поиска
+        searchInput.value = '';
+    };
+})
